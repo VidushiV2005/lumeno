@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -13,9 +13,26 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+// Initialize Auth
 export const auth = getAuth(app);
+
+// Set persistence to LOCAL (persists even when browser is closed)
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Auth persistence enabled");
+  })
+  .catch((error) => {
+    console.error("Error enabling persistence:", error);
+  });
+
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Optional: Force account selection every time
+// googleProvider.setCustomParameters({
+//   prompt: 'select_account'
+// });

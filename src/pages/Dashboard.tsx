@@ -1,12 +1,13 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store";
 import { clearUser } from "../features/userSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "../features/firebase";
 import { useNavigate } from "react-router-dom";
-import { Upload, MessageSquare, FileText, Brain, CheckSquare, Eye, LogOut, ChevronDown } from "lucide-react";
+import { Upload, MessageSquare, FileText, Brain, CheckSquare, Eye } from "lucide-react";
 import LiquidEther from "../components/LiquidEther";
+import Sidebar from "../components/Sidebar";
 import gsap from 'gsap';
 
 const DEFAULT_GLOW_COLOR = '132, 0, 255';
@@ -322,7 +323,6 @@ export default function Dashboard() {
   const user = useSelector((state: RootState) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
@@ -331,8 +331,12 @@ export default function Dashboard() {
     navigate("/login");
   };
 
+  const handleNavigation = (route: string) => {
+    navigate(route);
+  };
+
   return (
-    <div className="relative min-h-screen bg-black overflow-hidden">
+    <div className="relative min-h-screen bg-black overflow-hidden flex">
       {/* Liquid Ether Background */}
       <div className="absolute inset-0 z-0">
         <LiquidEther
@@ -357,76 +361,30 @@ export default function Dashboard() {
       {/* Vignette overlay */}
       <div className="absolute inset-0 bg-gradient-radial from-transparent via-black/20 to-black/60 z-[1]"></div>
 
-      {/* Content */}
-      <div className="relative z-10">
-        {/* Navbar */}
-        <nav className="backdrop-blur-xl bg-black/20 border-b border-white/5">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-light text-white tracking-tight">LUMENO</h1>
-              <div className="w-12 h-px bg-gradient-to-r from-purple-500 to-transparent"></div>
-            </div>
+      {/* Sidebar */}
+      <Sidebar
+        activePage="Home"
+        user={user}
+        onLogout={handleLogout}
+        onNavigate={handleNavigation}
+      />
 
-            {/* User Profile */}
-            <div className="relative">
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-white/20 transition-all"
-              >
-                {user.photo ? (
-                  <img src={user.photo} alt="Profile" className="w-8 h-8 rounded-full" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
-                    <span className="text-purple-400 font-medium text-sm">
-                      {user.name?.charAt(0) || 'U'}
-                    </span>
-                  </div>
-                )}
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-white">{user.name}</p>
-                  <p className="text-xs text-gray-400">{user.email}</p>
-                </div>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              </button>
-
-              {/* Dropdown */}
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-                  <div className="p-4 border-b border-white/10">
-                    <p className="text-sm font-medium text-white">{user.name}</p>
-                    <p className="text-xs text-gray-400 mt-1">{user.email}</p>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-white/5 transition-colors flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </nav>
-
+      {/* Main Content */}
+      <div className="relative z-10 flex-1 ml-72 transition-all duration-300 overflow-y-auto">
         {/* Hero Section */}
-        <div className="text-center py-20">
-          <h2 className="text-8xl md:text-9xl font-black tracking-tight mb-6 relative">
+        <div className="text-center py-16 px-6">
+          <h2 className="text-7xl md:text-8xl font-black tracking-tight mb-4 relative">
             <span className="absolute inset-0 blur-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 opacity-60"></span>
             <span className="relative bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent drop-shadow-2xl">
               LUMENO
             </span>
           </h2>
-          <p className="text-gray-400 text-xl mb-12 tracking-wide font-light">
-            Start Studying
+          <p className="text-gray-400 text-lg tracking-wide font-light">
+            Start Studying with AI-Powered Tools
           </p>
-          <div className="flex flex-col items-center gap-2 animate-bounce">
-            <ChevronDown className="w-6 h-6 text-gray-500" />
-          </div>
         </div>
 
-        {/* Features Grid with Magic Bento */}
+        {/* Features Grid */}
         <div className="max-w-7xl mx-auto px-6 pb-20">
           <style>{`
             .card-grid {

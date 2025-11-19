@@ -1,13 +1,23 @@
+import { useEffect } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "../features/firebase";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../features/userSlice";
 import { useNavigate } from "react-router-dom";
+import type { RootState } from "../store";
 import LiquidEther from "../components/LiquidEther";
 
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.user);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user.uid) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user.uid, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
