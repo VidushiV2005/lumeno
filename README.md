@@ -1,4 +1,4 @@
-# ✦ LUMENO — AI-Powered Study Companion
+# LUMENO — AI-Powered Study Companion
 
 > Upload PDFs. Get AI summaries, flashcards, and quizzes — instantly.
 
