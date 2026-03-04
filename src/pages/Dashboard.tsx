@@ -1,329 +1,181 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../store";
 import { clearUser } from "../features/userSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "../features/firebase";
 import { useNavigate } from "react-router-dom";
-import { Upload, MessageSquare, FileText, Brain, CheckSquare, Eye } from "lucide-react";
+import { 
+  Upload, MessageSquare, FileText, Brain, CheckSquare, 
+  ClipboardList, PenTool, TrendingUp, Zap, BookOpen, 
+  Award, BarChart3, Activity, Sparkles, ArrowRight
+} from "lucide-react";
 import LiquidEther from "../components/LiquidEther";
 import Sidebar from "../components/Sidebar";
 import gsap from 'gsap';
 
-const DEFAULT_GLOW_COLOR = '132, 0, 255';
-const DEFAULT_SPOTLIGHT_RADIUS = 300;
+// ─── Stat Card ───────────────────────────────────────────────────────────────
 
-interface FeatureCard {
-  color: string;
-  title: string;
-  description: string;
-  label: string;
+interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  trend?: string;
+  trendUp?: boolean;
+  delay?: number;
 }
 
-const featureCards: FeatureCard[] = [
-  {
-    color: '#060010',
-    title: 'PDF Upload',
-    description: 'Upload and manage your study materials',
-    label: 'Documents',
-    icon: Upload
-  },
-  {
-    color: '#060010',
-    title: 'AI Chat',
-    description: 'Ask questions about your PDFs',
-    label: 'Interactive',
-    icon: MessageSquare
-  },
-  {
-    color: '#060010',
-    title: 'Summaries',
-    description: 'Get instant AI-generated summaries',
-    label: 'Quick Learn',
-    icon: FileText
-  },
-  {
-    color: '#060010',
-    title: 'Flashcards',
-    description: 'Create smart flashcards automatically',
-    label: 'Memorize',
-    icon: Brain
-  },
-  {
-    color: '#060010',
-    title: 'Quizzes',
-    description: 'Test your knowledge with AI quizzes',
-    label: 'Practice',
-    icon: CheckSquare
-  },
-  {
-    color: '#060010',
-    title: 'PDF Viewer',
-    description: 'Read PDFs with AI assistance sidebar',
-    label: 'Study Mode',
-    icon: Eye
-  }
-];
-
-interface ParticleCardProps {
-  card: FeatureCard;
-  glowColor: string;
-  enableTilt?: boolean;
-  enableMagnetism?: boolean;
-  clickEffect?: boolean;
-}
-
-const ParticleCard = ({ card, glowColor, enableTilt = true, enableMagnetism = true, clickEffect = true }: ParticleCardProps) => {
+const StatCard = ({ icon: Icon, label, value, trend, trendUp, delay = 0 }: StatCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
-  const particlesRef = useRef<HTMLElement[]>([]);
-  const timeoutsRef = useRef<number[]>([]);
-  const isHoveredRef = useRef(false);
-  const Icon = card.icon;
-
-  const createParticleElement = (x: number, y: number) => {
-    const el = document.createElement('div');
-    el.className = 'particle';
-    el.style.cssText = `
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: rgba(${glowColor}, 1);
-      box-shadow: 0 0 6px rgba(${glowColor}, 0.6);
-      pointer-events: none;
-      z-index: 100;
-      left: ${x}px;
-      top: ${y}px;
-    `;
-    return el;
-  };
-
-  const clearAllParticles = () => {
-    timeoutsRef.current.forEach(clearTimeout);
-    timeoutsRef.current = [];
-
-    particlesRef.current.forEach(particle => {
-      gsap.to(particle, {
-        scale: 0,
-        opacity: 0,
-        duration: 0.3,
-        ease: 'back.in(1.7)',
-        onComplete: () => {
-          particle.parentNode?.removeChild(particle);
-        }
-      });
-    });
-    particlesRef.current = [];
-  };
-
-  const animateParticles = () => {
-    if (!cardRef.current || !isHoveredRef.current) return;
-
-    const { width, height } = cardRef.current.getBoundingClientRect();
-    
-    for (let i = 0; i < 12; i++) {
-      const timeoutId = window.setTimeout(() => {
-        if (!isHoveredRef.current || !cardRef.current) return;
-
-        const particle = createParticleElement(Math.random() * width, Math.random() * height);
-        cardRef.current.appendChild(particle);
-        particlesRef.current.push(particle);
-
-        gsap.fromTo(particle, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(1.7)' });
-
-        gsap.to(particle, {
-          x: (Math.random() - 0.5) * 100,
-          y: (Math.random() - 0.5) * 100,
-          rotation: Math.random() * 360,
-          duration: 2 + Math.random() * 2,
-          ease: 'none',
-          repeat: -1,
-          yoyo: true
-        });
-
-        gsap.to(particle, {
-          opacity: 0.3,
-          duration: 1.5,
-          ease: 'power2.inOut',
-          repeat: -1,
-          yoyo: true
-        });
-      }, i * 100);
-
-      timeoutsRef.current.push(timeoutId);
-    }
-  };
 
   useEffect(() => {
-    if (!cardRef.current) return;
-
-    const element = cardRef.current;
-
-    const handleMouseEnter = () => {
-      isHoveredRef.current = true;
-      animateParticles();
-
-      if (enableTilt) {
-        gsap.to(element, {
-          rotateX: 5,
-          rotateY: 5,
-          duration: 0.3,
-          ease: 'power2.out',
-          transformPerspective: 1000
-        });
-      }
-    };
-
-    const handleMouseLeave = () => {
-      isHoveredRef.current = false;
-      clearAllParticles();
-
-      if (enableTilt) {
-        gsap.to(element, {
-          rotateX: 0,
-          rotateY: 0,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-
-      if (enableMagnetism) {
-        gsap.to(element, {
-          x: 0,
-          y: 0,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!enableTilt && !enableMagnetism) return;
-
-      const rect = element.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      if (enableTilt) {
-        const rotateX = ((y - centerY) / centerY) * -10;
-        const rotateY = ((x - centerX) / centerX) * 10;
-
-        gsap.to(element, {
-          rotateX,
-          rotateY,
-          duration: 0.1,
-          ease: 'power2.out',
-          transformPerspective: 1000
-        });
-      }
-
-      if (enableMagnetism) {
-        const magnetX = (x - centerX) * 0.05;
-        const magnetY = (y - centerY) * 0.05;
-
-        gsap.to(element, {
-          x: magnetX,
-          y: magnetY,
-          duration: 0.3,
-          ease: 'power2.out'
-        });
-      }
-    };
-
-    const handleClick = (e: MouseEvent) => {
-      if (!clickEffect) return;
-
-      const rect = element.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const maxDistance = Math.max(
-        Math.hypot(x, y),
-        Math.hypot(x - rect.width, y),
-        Math.hypot(x, y - rect.height),
-        Math.hypot(x - rect.width, y - rect.height)
-      );
-
-      const ripple = document.createElement('div');
-      ripple.style.cssText = `
-        position: absolute;
-        width: ${maxDistance * 2}px;
-        height: ${maxDistance * 2}px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(${glowColor}, 0.4) 0%, rgba(${glowColor}, 0.2) 30%, transparent 70%);
-        left: ${x - maxDistance}px;
-        top: ${y - maxDistance}px;
-        pointer-events: none;
-        z-index: 1000;
-      `;
-
-      element.appendChild(ripple);
-
+    if (cardRef.current) {
       gsap.fromTo(
-        ripple,
-        { scale: 0, opacity: 1 },
-        {
-          scale: 1,
-          opacity: 0,
-          duration: 0.8,
-          ease: 'power2.out',
-          onComplete: () => ripple.remove()
-        }
+        cardRef.current,
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay }
       );
-    };
-
-    element.addEventListener('mouseenter', handleMouseEnter);
-    element.addEventListener('mouseleave', handleMouseLeave);
-    element.addEventListener('mousemove', handleMouseMove);
-    element.addEventListener('click', handleClick);
-
-    return () => {
-      isHoveredRef.current = false;
-      element.removeEventListener('mouseenter', handleMouseEnter);
-      element.removeEventListener('mouseleave', handleMouseLeave);
-      element.removeEventListener('mousemove', handleMouseMove);
-      element.removeEventListener('click', handleClick);
-      clearAllParticles();
-    };
-  }, [enableTilt, enableMagnetism, clickEffect, glowColor]);
+    }
+  }, []);
 
   return (
     <div
       ref={cardRef}
-      className="magic-bento-card magic-bento-card--border-glow"
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        backgroundColor: card.color,
-        '--glow-color': glowColor,
-        '--glow-x': '50%',
-        '--glow-y': '50%',
-        '--glow-intensity': '0',
-        '--glow-radius': `${DEFAULT_SPOTLIGHT_RADIUS}px`
-      } as React.CSSProperties}
+      className="group relative p-7 rounded-2xl bg-white/[0.04] border border-white/[0.08] hover:border-purple-500/25 hover:bg-white/[0.06] transition-all duration-500 overflow-hidden"
     >
-      <div className="magic-bento-card__header">
-        <div className="magic-bento-card__label">{card.label}</div>
-        <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
-          <Icon className="w-5 h-5 text-purple-400" />
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/[0.04] group-hover:to-pink-500/[0.04] transition-all duration-500 rounded-2xl" />
+      
+      <div className="relative z-10 flex flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/15 group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-4 h-4 text-purple-300" />
+          </div>
+          {trend && (
+            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+              trendUp 
+                ? 'text-emerald-400 bg-emerald-400/10' 
+                : 'text-rose-400 bg-rose-400/10'
+            }`}>
+              {trend}
+            </span>
+          )}
         </div>
-      </div>
-      <div className="magic-bento-card__content">
-        <h2 className="magic-bento-card__title">{card.title}</h2>
-        <p className="magic-bento-card__description">{card.description}</p>
+
+        <div>
+          <p className="text-2xl font-bold text-white tracking-tight">{value}</p>
+          <p className="text-sm text-gray-500 mt-0.5 font-light">{label}</p>
+        </div>
       </div>
     </div>
   );
 };
 
+// ─── Quick Action ─────────────────────────────────────────────────────────────
+
+interface QuickActionProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  color: string;
+  onClick?: () => void;
+}
+
+const QuickAction = ({ icon: Icon, title, description, color, onClick }: QuickActionProps) => (
+  <button
+    onClick={onClick}
+    className="group relative p-6 rounded-2xl bg-white/[0.03] border border-white/[0.07] hover:border-white/[0.15] hover:bg-white/[0.06] transition-all duration-300 text-left overflow-hidden w-full"
+  >
+    <div 
+      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+      style={{ background: `radial-gradient(ellipse at top left, ${color}0d 0%, transparent 65%)` }}
+    />
+    
+    <div className="relative z-10 flex items-start gap-4">
+      <div 
+        className="p-2.5 rounded-xl flex-shrink-0 transition-all duration-300 group-hover:scale-105"
+        style={{ background: `${color}12` }}
+      >
+        <div style={{ color }}>
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+      <div className="flex-1 min-w-0 pt-0.5">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-white">{title}</h3>
+          <ArrowRight className="w-3.5 h-3.5 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all duration-300 flex-shrink-0" />
+        </div>
+        <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{description}</p>
+      </div>
+    </div>
+  </button>
+);
+
+// ─── Recent Activity ──────────────────────────────────────────────────────────
+
+interface RecentActivityProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  subtitle: string;
+  time: string;
+  color: string;
+}
+
+const RecentActivity = ({ icon: Icon, title, subtitle, time, color }: RecentActivityProps) => (
+  <div className="group flex items-start gap-4 py-3.5 px-3 rounded-xl hover:bg-white/[0.03] transition-all duration-300 cursor-pointer">
+    <div 
+      className="p-2 rounded-lg flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform duration-300"
+      style={{ background: `${color}12` }}
+    >
+      <div style={{ color }}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-gray-200 truncate">{title}</p>
+      <p className="text-xs text-gray-500 mt-0.5 truncate">{subtitle}</p>
+    </div>
+    <span className="text-xs text-gray-600 flex-shrink-0 mt-0.5">{time}</span>
+  </div>
+);
+
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
+
+interface ProgressBarProps {
+  label: string;
+  value: string;
+  percent: number;
+  gradient: string;
+}
+
+const ProgressBar = ({ label, value, percent, gradient }: ProgressBarProps) => (
+  <div className="space-y-2.5">
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-400">{label}</span>
+      <span className="text-sm font-semibold text-white">{value}</span>
+    </div>
+    <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+      <div 
+        className="h-full rounded-full transition-all duration-700"
+        style={{ width: `${percent}%`, background: gradient }} 
+      />
+    </div>
+  </div>
+);
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
 export default function Dashboard() {
   const user = useSelector((state: RootState) => state.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const gridRef = useRef<HTMLDivElement>(null);
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good Morning');
+    else if (hour < 18) setGreeting('Good Afternoon');
+    else setGreeting('Good Evening');
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -331,202 +183,168 @@ export default function Dashboard() {
     navigate("/login");
   };
 
-  const handleNavigation = (route: string) => {
-    navigate(route);
-  };
-
   return (
     <div className="relative min-h-screen bg-black overflow-hidden flex">
-      {/* Liquid Ether Background */}
-      <div className="absolute inset-0 z-0">
+      {/* Background — locked behind all content */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <LiquidEther
           colors={['#ec4899', '#a855f7', '#3b82f6']}
-          mouseForce={30}
-          cursorSize={150}
+          mouseForce={10}
+          cursorSize={80}
           isViscous={false}
           viscous={30}
           iterationsViscous={32}
           iterationsPoisson={32}
-          resolution={0.6}
+          resolution={0.35}
           isBounce={false}
           autoDemo={true}
-          autoSpeed={0.3}
-          autoIntensity={3.0}
+          autoSpeed={0.15}
+          autoIntensity={1.2}
           takeoverDuration={0.4}
           autoResumeDelay={2500}
           autoRampDuration={1.0}
         />
       </div>
-
-      {/* Vignette overlay */}
-      <div className="absolute inset-0 bg-gradient-radial from-transparent via-black/20 to-black/60 z-[1]"></div>
+      {/* Dark overlay — keeps fluid subtle and text fully legible */}
+      <div className="fixed inset-0 z-[1] pointer-events-none bg-black/80" />
+      <div className="fixed inset-0 z-[2] pointer-events-none bg-gradient-to-b from-black/50 via-black/10 to-black/50" />
 
       {/* Sidebar */}
       <Sidebar
         activePage="Home"
         user={user}
         onLogout={handleLogout}
-        onNavigate={handleNavigation}
+        onNavigate={(route) => navigate(route)}
       />
 
       {/* Main Content */}
-      <div className="relative z-10 flex-1 ml-72 transition-all duration-300 overflow-y-auto">
-        {/* Hero Section */}
-        <div className="text-center py-16 px-6">
-          <h2 className="text-7xl md:text-8xl font-black tracking-tight mb-4 relative">
-            <span className="absolute inset-0 blur-3xl bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 opacity-60"></span>
-            <span className="relative bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent drop-shadow-2xl">
-              LUMENO
-            </span>
-          </h2>
-          <p className="text-gray-400 text-lg tracking-wide font-light">
-            Start Studying with AI-Powered Tools
-          </p>
-        </div>
+      <div className="relative z-10 flex-1 ml-72 overflow-y-auto isolate">
+        <div className="max-w-[1400px] mx-auto px-10 py-10 space-y-10">
 
-        {/* Features Grid */}
-        <div className="max-w-7xl mx-auto px-6 pb-20">
-          <style>{`
-            .card-grid {
-              display: grid;
-              gap: 0.5em;
-              font-size: clamp(1rem, 0.9rem + 0.5vw, 1.5rem);
-            }
-
-            .magic-bento-card {
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              position: relative;
-              aspect-ratio: 4/3;
-              min-height: 200px;
-              width: 100%;
-              max-width: 100%;
-              padding: 1.25em;
-              border-radius: 20px;
-              border: 1px solid #392e4e;
-              background: #060010;
-              font-weight: 300;
-              overflow: hidden;
-              transition: all 0.3s ease;
-            }
-
-            .magic-bento-card:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            }
-
-            .magic-bento-card__header,
-            .magic-bento-card__content {
-              display: flex;
-              position: relative;
-              color: white;
-            }
-
-            .magic-bento-card__header {
-              gap: 0.75em;
-              justify-content: space-between;
-            }
-
-            .magic-bento-card__content {
-              flex-direction: column;
-            }
-
-            .magic-bento-card__label {
-              font-size: 16px;
-            }
-
-            .magic-bento-card__title {
-              font-weight: 400;
-              font-size: 16px;
-              margin: 0 0 0.25em;
-            }
-
-            .magic-bento-card__description {
-              font-size: 12px;
-              line-height: 1.2;
-              opacity: 0.9;
-            }
-
-            .magic-bento-card--border-glow::after {
-              content: '';
-              position: absolute;
-              inset: 0;
-              padding: 6px;
-              background: radial-gradient(
-                var(--glow-radius) circle at var(--glow-x) var(--glow-y),
-                rgba(132, 0, 255, calc(var(--glow-intensity) * 0.8)) 0%,
-                rgba(132, 0, 255, calc(var(--glow-intensity) * 0.4)) 30%,
-                transparent 60%
-              );
-              border-radius: inherit;
-              mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-              mask-composite: subtract;
-              -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-              -webkit-mask-composite: xor;
-              pointer-events: none;
-              transition: opacity 0.3s ease;
-              z-index: 1;
-            }
-
-            @media (max-width: 599px) {
-              .card-grid {
-                grid-template-columns: 1fr;
-              }
-            }
-
-            @media (min-width: 600px) {
-              .card-grid {
-                grid-template-columns: repeat(2, 1fr);
-              }
-            }
-
-            @media (min-width: 1024px) {
-              .card-grid {
-                grid-template-columns: repeat(4, 1fr);
-              }
-
-              .magic-bento-card:nth-child(3) {
-                grid-column: span 2;
-                grid-row: span 2;
-              }
-
-              .magic-bento-card:nth-child(4) {
-                grid-column: 1 / span 2;
-                grid-row: 2 / span 2;
-              }
-
-              .magic-bento-card:nth-child(6) {
-                grid-column: 4;
-                grid-row: 3;
-              }
-            }
-          `}</style>
-
-          <div className="card-grid" ref={gridRef}>
-            {featureCards.map((card, index) => (
-              <ParticleCard
-                key={index}
-                card={card}
-                glowColor={DEFAULT_GLOW_COLOR}
-                enableTilt={true}
-                enableMagnetism={true}
-                clickEffect={true}
-              />
-            ))}
+          {/* ── Welcome ── */}
+          <div className="pt-4 pb-2">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="text-xs font-medium tracking-widest uppercase text-purple-400/70">Dashboard</span>
+              <span className="text-gray-700">·</span>
+              <span className="text-xs text-gray-600">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold text-white tracking-tight">
+              {greeting},{' '}
+              <span className="bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
+                {user.name?.split(' ')[0] || 'Student'}
+              </span>
+            </h1>
+            <p className="text-gray-500 mt-2 text-sm font-light leading-relaxed">
+              Here's an overview of your study activity and tools.
+            </p>
           </div>
 
-          {/* CTA Section */}
-          <div className="mt-16 text-center">
-            <div className="inline-flex flex-col items-center gap-4 p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10">
-              <h3 className="text-2xl font-semibold text-white">Ready to start?</h3>
-              <p className="text-gray-400 mb-4">Upload your first PDF and experience AI-powered learning</p>
-              <button className="group px-8 py-4 rounded-xl bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 hover:from-pink-500 hover:via-purple-500 hover:to-blue-500 text-white font-medium transition-all duration-200 shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 flex items-center gap-2">
-                <Upload className="w-5 h-5" />
-                <span>Upload PDF</span>
-              </button>
+          {/* ── Stats ── */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard icon={BookOpen}     label="PDFs Uploaded"     value="24"      trend="+3 this week"  trendUp delay={0.05} />
+            <StatCard icon={MessageSquare} label="AI Conversations"  value="156"     trend="+12 today"     trendUp delay={0.1}  />
+            <StatCard icon={Brain}         label="Flashcards Created" value="438"    trend="+28 this week" trendUp delay={0.15} />
+            <StatCard icon={Award}         label="Study Streak"       value="12 days" trend="Personal best" trendUp delay={0.2}  />
+          </div>
+
+          {/* ── Two Column: Quick Actions + Activity ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            {/* Quick Actions — 3 cols */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="flex items-center gap-2.5">
+                <Zap className="w-4 h-4 text-purple-400" />
+                <h2 className="text-base font-semibold text-white">Quick Actions</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <QuickAction icon={Upload}       title="Upload PDF"        description="Add study materials for AI processing"  color="#ec4899" onClick={() => navigate('/upload')}     />
+                <QuickAction icon={MessageSquare} title="AI Chat"           description="Ask questions about your materials"     color="#a855f7" onClick={() => navigate('/chat')}       />
+                <QuickAction icon={Brain}         title="Flashcards"        description="Review and memorize with smart cards"   color="#3b82f6" onClick={() => navigate('/flashcards')} />
+                <QuickAction icon={CheckSquare}   title="Take a Quiz"       description="Test knowledge with AI-generated quizzes" color="#10b981" onClick={() => navigate('/quiz')}   />
+                <QuickAction icon={PenTool}       title="Create Notes"      description="Capture notes from study sessions"      color="#f59e0b" onClick={() => navigate('/notes')}     />
+                <QuickAction icon={ClipboardList} title="Manage Tasks"      description="Organise your study schedule"           color="#06b6d4" onClick={() => navigate('/todo')}      />
+              </div>
+            </div>
+
+            {/* Recent Activity — 2 cols */}
+            <div className="lg:col-span-2 p-6 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex flex-col">
+              <div className="flex items-center gap-2.5 mb-5">
+                <Activity className="w-4 h-4 text-purple-400" />
+                <h2 className="text-base font-semibold text-white">Recent Activity</h2>
+              </div>
+              <div className="flex-1 divide-y divide-white/[0.04]">
+                <RecentActivity icon={Upload}        title="Quantum Physics Ch.5 uploaded"   subtitle="Successfully processed with AI"   time="2h ago"       color="#ec4899" />
+                <RecentActivity icon={Brain}         title="Created 24 flashcards"           subtitle="From 'Biology Notes.pdf'"         time="5h ago"       color="#3b82f6" />
+                <RecentActivity icon={CheckSquare}   title="Modern History quiz"             subtitle="Score: 92% · 23/25 correct"       time="Yesterday"    color="#10b981" />
+                <RecentActivity icon={MessageSquare} title="AI Chat session"                 subtitle="Discussed calculus derivatives"   time="Yesterday"    color="#a855f7" />
+                <RecentActivity icon={FileText}      title="Summary generated"               subtitle="Economics textbook, chapter 3"    time="2 days ago"   color="#f59e0b" />
+              </div>
             </div>
           </div>
+
+          {/* ── Weekly Progress + CTA ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            {/* Weekly Progress */}
+            <div className="lg:col-span-2 p-7 rounded-2xl bg-white/[0.04] border border-white/[0.08] space-y-7">
+              <div className="flex items-center gap-2.5">
+                <BarChart3 className="w-4 h-4 text-purple-400" />
+                <h2 className="text-base font-semibold text-white">This Week</h2>
+              </div>
+              <div className="space-y-6">
+                <ProgressBar label="Study Time"       value="18.5 hrs" percent={74} gradient="linear-gradient(90deg, #a855f7, #ec4899)" />
+                <ProgressBar label="Flashcard Review" value="156 / 200" percent={78} gradient="linear-gradient(90deg, #3b82f6, #06b6d4)" />
+                <ProgressBar label="Quiz Completion"  value="8 / 10"    percent={80} gradient="linear-gradient(90deg, #10b981, #34d399)" />
+              </div>
+              <div className="pt-5 border-t border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-sm font-medium text-emerald-400">+23% from last week</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">Keep up the great work!</p>
+              </div>
+            </div>
+
+            {/* CTA Banner */}
+            <div className="lg:col-span-3 relative overflow-hidden rounded-2xl p-8 flex flex-col justify-between min-h-[200px]">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/20 via-pink-600/15 to-blue-600/20" />
+              <div className="absolute inset-0 border border-purple-500/20 rounded-2xl" />
+              <div className="absolute -top-20 -right-20 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+              <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl" />
+
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 mb-5">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span className="text-xs font-medium text-purple-300">AI-Powered Learning</span>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2 leading-tight">
+                  Ready to level up<br />
+                  <span className="bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent">
+                    your studies?
+                  </span>
+                </h3>
+                <p className="text-gray-400 text-sm leading-relaxed max-w-xs">
+                  Upload a PDF and experience AI-assisted learning — summaries, flashcards, and quizzes in seconds.
+                </p>
+              </div>
+
+              <div className="relative z-10 mt-8">
+                <button 
+                  onClick={() => navigate('/upload')}
+                  className="group/btn inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-semibold transition-all duration-300 shadow-lg shadow-purple-600/20 hover:shadow-purple-600/40 hover:scale-[1.02]"
+                >
+                  <Upload className="w-4 h-4" />
+                  Upload a PDF
+                  <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform duration-300" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Bottom spacing ── */}
+          <div className="h-6" />
         </div>
       </div>
     </div>

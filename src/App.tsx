@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './features/firebase';
@@ -8,6 +8,22 @@ import type { RootState } from './store';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Upload from './pages/Upload';
+import Chat from './pages/Chat';
+import Summaries from './pages/Summaries';
+import Flashcards from './pages/Flashcards';
+import Quizzes from './pages/Quizzes';
+import PDFViewer from './pages/Pdfviewer';
+import Account from './pages/Account';
+
+
+
+
+
+
+
+
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -22,7 +38,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 export default function App() {
   const dispatch = useDispatch();
-  const user = useSelector((state: RootState) => state.user);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
@@ -70,6 +85,20 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+  path="/upload"
+  element={
+    <ProtectedRoute>
+      <Upload />
+    </ProtectedRoute>
+  }
+/>
+<Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+<Route path="/summaries" element={<ProtectedRoute><Summaries /></ProtectedRoute>} />
+<Route path="/flashcards" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+<Route path="/quizzes" element={<ProtectedRoute><Quizzes /></ProtectedRoute>} />
+<Route path="/viewer" element={<ProtectedRoute><PDFViewer /></ProtectedRoute>} />
+<Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       {/* Redirect root to dashboard (will be protected) */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
