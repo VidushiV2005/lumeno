@@ -8,7 +8,7 @@ Built with React · TypeScript · Firebase Auth · Tailwind CSS · Vite
 
 ## What is Lumeno?
 
-Lumeno is a **frontend-only** AI study web app. Students upload PDFs and the app generates smart summaries, flashcard decks, quizzes, and an AI chat interface — all within a dark glassmorphism UI. Authentication is handled via **Firebase Google Sign-In**. There is no custom backend.
+Lumeno is a **frontend-only** AI study web app. Students upload PDFs and the app generates smart summaries, flashcard decks, quizzes, and an AI chat interface — all within a dark glassmorphism UI. Authentication is handled via **Firebase Google Sign-In**.
 
 ---
 
